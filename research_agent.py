@@ -90,11 +90,11 @@ def section_competitors():
 def section_fleet():
     """Our own paywall status."""
     checks = [
-        ("public /v1/sentiment", "https://abstain-eliminate-unison.ngrok-free.dev/v1/sentiment", {"User-Agent": "python-requests/2.32.0"}, 402),
-        ("public /v1/sample", "https://abstain-eliminate-unison.ngrok-free.dev/v1/sample", {"User-Agent": "python-requests/2.32.0"}, 200),
-        ("public /v1/sentiment-report", "https://abstain-eliminate-unison.ngrok-free.dev/v1/sentiment-report", {"User-Agent": "python-requests/2.32.0"}, 402),
-        ("llms.txt", "https://abstain-eliminate-unison.ngrok-free.dev/llms.txt", {"User-Agent": "python-requests/2.32.0"}, 200),
-        ("MCP endpoint", "https://abstain-eliminate-unison.ngrok-free.dev/mcp", {"User-Agent": "python-requests/2.32.0"}, None),
+        ("public /v1/sentiment", "https://api.6766587364.lol/v1/sentiment", {"User-Agent": "python-requests/2.32.0"}, 402),
+        ("public /v1/sample", "https://api.6766587364.lol/v1/sample", {"User-Agent": "python-requests/2.32.0"}, 200),
+        ("public /v1/sentiment-report", "https://api.6766587364.lol/v1/sentiment-report", {"User-Agent": "python-requests/2.32.0"}, 402),
+        ("llms.txt", "https://api.6766587364.lol/llms.txt", {"User-Agent": "python-requests/2.32.0"}, 200),
+        ("MCP endpoint", "https://api.6766587364.lol/mcp", {"User-Agent": "python-requests/2.32.0"}, None),
     ]
     lines = []
     for name, url, hdrs, expect in checks:
