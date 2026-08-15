@@ -1,0 +1,11 @@
+fastapi>=0.110
+uvicorn>=0.29
+requests>=2.31
+x402[solana]>=2.18
+eth-account>=0.12
+mcp>=2.0.0
+yfinance>=1.5
+pandas>=2.0
+numpy>=1.26
+solana==0.34.3
+websockets>=13

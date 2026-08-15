@@ -1,0 +1,6 @@
+tunnel: d4c987e1-a617-46c7-ae5d-fd3cd9ebe4bb
+credentials-file: /root/.cloudflared/credentials.json
+ingress:
+  - hostname: api.6766587364.lol
+    service: http://localhost:8000
+  - service: http_status:404
