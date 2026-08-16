@@ -16,7 +16,7 @@ Run (local test):
 Env (see config below):
   PAY_TO=0x...          Base wallet that receives payments (REQUIRED for real use)
   NETWORK=eip155:84532  Base Sepolia testnet (default) | eip155:8453 = Base mainnet
-  PRICE_USD=0.005       USD per call
+  PRICE_USD=0.01       USD per call
 
 Notes:
   - Testnet (default) lets us exercise the full 402 handshake with zero funds.
@@ -40,12 +40,13 @@ import config
 PAY_TO = os.environ.get("PAY_TO", "0x583FfEE3f6E0E8cAB3531fBd5C4e291784D3b6cD")  # J's Base wallet
 PAY_TO_SOL = os.environ.get("PAY_TO_SOL", "")  # J's Solana address — enables the Solana rail
 NETWORK = os.environ.get("NETWORK", "eip155:84532")   # Base Sepolia; 8453 = mainnet
-PRICE_USD = os.environ.get("PRICE_USD", "0.005")      # $ per call
+PRICE_USD = os.environ.get("PRICE_USD", "0.01")      # $ per call
 SOL_MAINNET_CAIP2 = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
 SOL_RPC = os.environ.get("SOL_RPC", "https://api.mainnet-beta.solana.com")
-# Solana-first promo: Solana rail priced at SOL_DISCOUNT_PCT of the Base price
-# (default 0.6 = 40% off) to learn which chain converts better. Set SOL_PROMO=0 to disable.
-SOL_PROMO = os.environ.get("SOL_PROMO", "1") == "1"
+# Solana rail priced at parity with Base. Promo (40% off) RETIRED 2026-08-16:
+# zero settled Solana calls across 13 cycles while the discount was live.
+# Re-enable experiment with SOL_PROMO=1 / SOL_DISCOUNT_PCT=0.6 if needed.
+SOL_PROMO = os.environ.get("SOL_PROMO", "0") == "1"
 SOL_DISCOUNT_PCT = float(os.environ.get("SOL_DISCOUNT_PCT", "0.6"))
 SAMPLE_LIMIT = int(os.environ.get("SAMPLE_LIMIT", "10"))  # free samples per IP per hour
 # Enterprise volume deals: private endpoint, unlisted. $25 -> 10,000 credits
@@ -60,8 +61,8 @@ import decimal as _decimal
 def _accepts(price: str) -> list[dict]:
     """Payment options for a route: Base USDC always; Solana USDC when PAY_TO_SOL is set.
 
-    During the Solana-first promo, the Solana rail is discounted to
-    SOL_DISCOUNT_PCT of the Base price (e.g. $0.005 -> $0.003).
+    During the Solana-first promo, the Solana rail was discounted 40%;
+    the promo is retired (SOL_PROMO=0), so both rails price at parity.
     """
     opts = [{"scheme": "exact", "payTo": PAY_TO, "price": price, "network": NETWORK}]
     if PAY_TO_SOL:
@@ -258,7 +259,7 @@ def _custom_openapi():
             base_price_usd = None
             for acc in cfg.get("accepts", []):
                 net = acc.get("network", "")
-                price_usd = acc.get("price", "$0.005").lstrip("$")
+                price_usd = acc.get("price", "$0.01").lstrip("$")
                 if net.startswith("eip155:"):
                     if base_price_usd is None:
                         base_price_usd = price_usd
@@ -277,7 +278,7 @@ def _custom_openapi():
                     })
             op["x-payment-info"] = {
                 "protocols": [{"x402": {}}],
-                "price": {"mode": "fixed", "currency": "USD", "amount": f"{float(base_price_usd or '0.005'):.6f}"},
+                "price": {"mode": "fixed", "currency": "USD", "amount": f"{float(base_price_usd or '0.01'):.6f}"},
                 "offers": offers,
             }
     except Exception:
@@ -1147,10 +1148,10 @@ Real-time XLM (Stellar) market intelligence, pay-per-call via x402 (HTTP 402, US
 ## Endpoints
 
 - /v1/sample — FREE (10/hour/IP) — reduced sentiment snapshot: score, source, live price. Taste before you pay.
-- /v1/sentiment — $0.005 — composite XLM market sentiment in [-1, 1] (Crypto Fear & Greed + SDEX order-flow imbalance + 24h momentum), live price, spread.
-- /v1/quote — $0.005 — XLM price, best bid/ask, spread, book depth.
-- /v1/arb-opportunities — $0.005 — live CEX<->SDEX arbitrage scan (Kraken, Upbit, SDEX), net % after fees.
-- /v1/multi-asset — $0.005 — strategy backtest screen (SMA crossover, RSI mean-reversion, Buy&Hold) across 8 major assets; params: tickers (comma-separated), period (e.g. 3mo, 1y).
+- /v1/sentiment — $0.01 — composite XLM market sentiment in [-1, 1] (Crypto Fear & Greed + SDEX order-flow imbalance + 24h momentum), live price, spread.
+- /v1/quote — $0.01 — XLM price, best bid/ask, spread, book depth.
+- /v1/arb-opportunities — $0.01 — live CEX<->SDEX arbitrage scan (Kraken, Upbit, SDEX), net % after fees.
+- /v1/multi-asset — $0.01 — strategy backtest screen (SMA crossover, RSI mean-reversion, Buy&Hold) across 8 major assets; params: tickers (comma-separated), period (e.g. 3mo, 1y).
 - /v1/sentiment-report — $0.05 — premium full report: verdict (bullish/bearish/neutral), confidence, raw FNG index + label, order-flow imbalance, book depth, 24h momentum %, arb context.
 - /v1/bundle — $0.05 — prepaid bundle: 10 credits (10 basic calls or 1 premium report). Send header X-Bundle-Token: <token> on any paid endpoint to spend credits instead of paying per call.
 - /v1/sentiment-history — $0.10 — hourly sentiment series (default 24h, ?hours= up to 168) — FNG + momentum reconstructed, live order-flow in 'current', trend direction.
@@ -1188,9 +1189,9 @@ Verify with solders (or any ed25519 lib):
 
 Network: eip155:8453 (Base) + solana mainnet. Asset: USDC. Facilitator: self-hosted (no third party).
 
-## Solana-first promo
+## Pricing rails
 
-The Solana rail is temporarily discounted 40% (0.6x Base price) — e.g. /v1/sentiment is $0.003 on Solana vs $0.005 on Base. Promo may end without notice; check the 402 accepts[] for live prices.
+Base (USDC, eip155:8453) and Solana (USDC) price at parity. The 40% Solana promo was retired 2026-08-16 (zero Solana settlements across 13 cycles); both rails now cost the same. Check the 402 accepts[] for live prices.
 
 ## Receipts (provenance)
 
@@ -1252,15 +1253,15 @@ th {{ background: #f8f8f8; }}
 <body>
 <h1>🌀 Echo Sentiment API</h1>
 <p>Real-time <strong>XLM (Stellar)</strong> market intelligence for AI agents. Composite sentiment from the Crypto Fear &amp; Greed Index, SDEX order-flow imbalance, and 24h price momentum — <strong>rules only, no LLM in the loop</strong>.</p>
-<p><span class="badge">Live on {NETWORK.split(":")[1] if ":" in NETWORK else NETWORK}</span> <span class="rails">{rails}</span> <span class="badge">x402 v2</span> <span class="badge" style="background:#fff3e0;color:#e65100">Solana promo: 40% off</span></p>
+<p><span class="badge">Live on {NETWORK.split(":")[1] if ":" in NETWORK else NETWORK}</span> <span class="rails">{rails}</span> <span class="badge">x402 v2</span> <span class="badge" style="background:#e8f5e9;color:#2e7d32">2 rails · parity pricing</span></p>
 <p>Pay per call in <strong>USDC</strong> via <a href="https://x402.org">x402</a> — HTTP 402 → sign an EIP-3009 permit (or Solana transfer) → 200. <strong>No account, no API key, no subscription.</strong> The payment is the authentication.</p>
 <h2>Paid endpoints</h2>
 <table>
 <tr><th>Endpoint</th><th>Price</th><th>What you get</th></tr>
-<tr><td><code>/v1/sentiment</code></td><td class="price">$0.005</td><td>Composite XLM sentiment (−1..1), components, live price, spread</td></tr>
-<tr><td><code>/v1/quote</code></td><td class="price">$0.005</td><td>XLM price, best bid/ask, spread, book depth</td></tr>
-<tr><td><code>/v1/arb-opportunities</code></td><td class="price">$0.005</td><td>CEX↔SDEX arbitrage scan (Kraken, Upbit), net % after fees</td></tr>
-<tr><td><code>/v1/multi-asset</code></td><td class="price">$0.005</td><td>Strategy screen across 8 assets (SMA/RSI/Bollinger vs Buy&Hold)</td></tr>
+<tr><td><code>/v1/sentiment</code></td><td class="price">$0.01</td><td>Composite XLM sentiment (−1..1), components, live price, spread</td></tr>
+<tr><td><code>/v1/quote</code></td><td class="price">$0.01</td><td>XLM price, best bid/ask, spread, book depth</td></tr>
+<tr><td><code>/v1/arb-opportunities</code></td><td class="price">$0.01</td><td>CEX↔SDEX arbitrage scan (Kraken, Upbit), net % after fees</td></tr>
+<tr><td><code>/v1/multi-asset</code></td><td class="price">$0.01</td><td>Strategy screen across 8 assets (SMA/RSI/Bollinger vs Buy&Hold)</td></tr>
 <tr><td><code>/v1/fng</code></td><td class="price">$0.01</td><td>Crypto Fear &amp; Greed index + label (cheap decision tick)</td></tr>
 <tr><td><code>/v1/xlm-network</code></td><td class="price">$0.01</td><td>Stellar on-chain pulse — ledger, supply, SDEX trade stats</td></tr>
 <tr><td><code>/v1/attested-quote</code></td><td class="price">$0.01</td><td>Oracle-grade price + Ed25519 signature (verifiable)</td></tr>
@@ -1451,7 +1452,7 @@ def sample(request: Request):
         "sentiment": round(sig["sentiment"], 4),
         "sentiment_source": sig["sentiment_source"],
         "price_usd": sig["price_usd"],
-        "upgrade": "$0.005 — GET /v1/sentiment (full: components, mid, spread) | $0.05 — /v1/sentiment-report",
+        "upgrade": "$0.01 — GET /v1/sentiment (full: components, mid, spread) | $0.05 — /v1/sentiment-report",
         "ts": sig["ts"],
     }
 
