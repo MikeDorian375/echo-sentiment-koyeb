@@ -1003,6 +1003,27 @@ def _v1_to_v2_header(raw_b64: str):
 
 
 @app.middleware("http")
+async def access_log_middleware(request, call_next):
+    """One-line request log (ts, method, path, status, ip) — feeds the
+    profit agent's endpoint-usage telemetry. Enabled via ACCESS_LOG env."""
+    import time as _t
+    if os.environ.get("ACCESS_LOG", "1") != "1":
+        return await call_next(request)
+    _t0 = _t.time()
+    try:
+        response = await call_next(request)
+        status = response.status_code
+    except Exception:
+        status = 500
+        raise
+    _dt = (_t.time() - _t0) * 1000
+    ip = request.client.host if request.client else "-"
+    line = f"{_t.strftime('%Y-%m-%d %H:%M:%S')} {request.method} {request.url.path} -> {status} ({_dt:.0f}ms) {ip}"
+    print(line, flush=True)
+    return response
+
+
+@app.middleware("http")
 async def x402_payment_gate(request, call_next):
     # Bundle bypass: a valid prepaid token serves the call without a new payment.
     token = request.headers.get("x-bundle-token")
