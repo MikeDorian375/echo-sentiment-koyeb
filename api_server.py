@@ -231,8 +231,7 @@ BASE_RPC = os.environ.get(
     "https://mainnet.base.org" if NETWORK.endswith(":8453") else "https://base-sepolia.publicnode.com",
 )
 
-# Public base URL: override with PUBLIC_BASE=https://api.6766587364.lol once the
-# Cloudflare Tunnel is live — default is the tunnel URL, env PUBLIC_BASE overrides.
+# Public base URL (Cloudflare Tunnel is live; ngrok retired).
 PUBLIC_BASE = os.environ.get("PUBLIC_BASE", "https://api.6766587364.lol").rstrip("/")
 
 app = FastAPI(title="Echo Sentiment API", version="0.1.0",
@@ -1651,7 +1650,7 @@ if __name__ == "__main__":
 
     print(f"[api] Echo Sentiment API — {NETWORK} — ${PRICE_USD}/call")
     print("[api] test: curl -i http://127.0.0.1:8000/v1/sentiment  (expect 402)")
-    # BIND_HOST: default loopback (cloudflared tunnels to it locally); set 0.0.0.0 on
-    # Koyeb so the load balancer can reach the container (no tunnel process there).
+    # BIND_HOST: default loopback (ngrok tunnels to it locally); set 0.0.0.0 on
+    # Koyeb so the load balancer can reach the container (no ngrok there).
     _bind = os.environ.get("BIND_HOST", "127.0.0.1")
     uvicorn.run(app, host=_bind, port=8000, log_level="warning")
