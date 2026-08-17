@@ -1,0 +1,8 @@
+{
+  "name": "echo-sentiment",
+  "description": "Real-time XLM market sentiment, price, arbitrage and strategy data. Pay-per-call via x402 — no API keys, no subscriptions.",
+  "url": "https://api.6766587364.lol/mcp",
+  "type": "http",
+  "tools": ["get_xlm_sentiment"],
+  "auth": "x402 (HTTP 402 payment required — USDC on Base/Solana)"
+}
